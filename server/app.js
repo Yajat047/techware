@@ -56,7 +56,36 @@ mongoose
 // Middleware
 app.use(morgan("dev"));
 app.use(cookieParser());
-app.use(cors());
+
+// CORS Configuration - Allow specific origins from environment variables
+const allowedOrigins = [
+  process.env.CORS_ORIGIN_1,
+  process.env.CORS_ORIGIN_2,
+  process.env.CORS_ORIGIN_3,
+].filter(Boolean); // Remove undefined/null values
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // If no origins configured in env, allow all origins (development mode)
+    if (allowedOrigins.length === 0) {
+      return callback(null, true);
+    }
+    
+    // Check if the origin is in the allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Allow cookies to be sent with requests
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.static("public"));
 app.use('/api/uploads', express.static('public/uploads'));
 app.use(express.urlencoded({ extended: false }));
